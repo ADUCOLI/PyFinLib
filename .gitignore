@@ -1,0 +1,12 @@
+**/*.ncb
+**/*.suo
+**/*.user
+**/*.bak
+**/*.ncb
+**/*.suo
+**/*.log
+**/.metadata
+**/.svn
+**/build
+/build
+**/TestResults

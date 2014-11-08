@@ -1,0 +1,4 @@
+PyFinLib
+========
+
+Python Finance Library

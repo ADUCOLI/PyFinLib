@@ -3,6 +3,7 @@
 **/*.user
 **/*.bak
 **/*.ncb
+**/*.pyc
 **/*.suo
 **/*.log
 **/.metadata

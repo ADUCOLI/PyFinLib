@@ -1,32 +1,260 @@
 # -*- coding: utf-8 -*-
 """
-Created on Sat Nov 15 11:56:20 2014
+Created on Sat Nov 15 17:18:23 2014
 
-@author: gianca
+@author: Emanuele Mercuri
 """
-
-
 import datetime as DT
 import workdays as WD
 
-def periodParser(period):
-    index = 0
-    for i in range(0,len(period)):
-        if period[i].isalpha():
-            index = i
-            break
+class Calendar:
+#    Calendar class with addPeriod utilities and holidays    
     
-    print index
-    out = {}
-    out['Number'] = int(period[:index])
-    out['strPeriod'] = period[index:]
-    return out
-
-#def dateAddPeriod(date,period):
+    holidays = [
+        DT.datetime(2014,12,25)
+        ,DT.datetime(2014,12,26)
+        ,DT.datetime(2015,1,1)
+        ,DT.datetime(2015,4,3)
+        ,DT.datetime(2015,4,6)
+        ,DT.datetime(2015,12,25)
+        ,DT.datetime(2016,1,1)
+        ,DT.datetime(2016,3,25)
+        ,DT.datetime(2016,3,28)
+        ,DT.datetime(2016,12,26)
+        ,DT.datetime(2017,4,14)
+        ,DT.datetime(2017,4,17)
+        ,DT.datetime(2017,12,25)
+        ,DT.datetime(2017,12,26)
+        ,DT.datetime(2018,1,1)
+        ,DT.datetime(2018,3,30)
+        ,DT.datetime(2018,4,2)
+        ,DT.datetime(2018,12,25)
+        ,DT.datetime(2018,12,26)
+        ,DT.datetime(2019,1,1)
+        ,DT.datetime(2019,4,19)
+        ,DT.datetime(2019,4,22)
+        ,DT.datetime(2019,12,25)
+        ,DT.datetime(2019,12,26)
+        ,DT.datetime(2020,1,1)
+        ,DT.datetime(2020,4,10)
+        ,DT.datetime(2020,4,13)
+        ,DT.datetime(2020,12,25)
+        ,DT.datetime(2021,1,1)
+        ,DT.datetime(2021,4,2)
+        ,DT.datetime(2021,4,5)
+        ,DT.datetime(2022,4,15)
+        ,DT.datetime(2022,4,18)
+        ,DT.datetime(2022,12,26)
+        ,DT.datetime(2023,4,7)
+        ,DT.datetime(2023,4,10)
+        ,DT.datetime(2023,12,25)
+        ,DT.datetime(2023,12,26)
+        ,DT.datetime(2024,1,1)
+        ,DT.datetime(2024,3,29)
+        ,DT.datetime(2024,4,1)
+        ,DT.datetime(2024,12,25)
+        ,DT.datetime(2024,12,26)
+        ,DT.datetime(2025,1,1)
+        ,DT.datetime(2025,4,18)
+        ,DT.datetime(2025,4,21)
+        ,DT.datetime(2025,12,25)
+        ,DT.datetime(2025,12,26)
+        ,DT.datetime(2026,1,1)
+        ,DT.datetime(2026,4,3)
+        ,DT.datetime(2026,4,6)
+        ,DT.datetime(2026,12,25)
+        ,DT.datetime(2027,1,1)
+        ,DT.datetime(2027,3,26)
+        ,DT.datetime(2027,3,29)
+        ,DT.datetime(2028,4,14)
+        ,DT.datetime(2028,4,17)
+        ,DT.datetime(2028,12,25)
+        ,DT.datetime(2028,12,26)
+        ,DT.datetime(2029,1,1)
+        ,DT.datetime(2029,3,30)
+        ,DT.datetime(2029,4,2)
+        ,DT.datetime(2029,12,25)
+        ,DT.datetime(2029,12,26)
+        ,DT.datetime(2030,1,1)
+        ,DT.datetime(2030,4,19)
+        ,DT.datetime(2030,4,22)
+        ,DT.datetime(2030,12,25)
+        ,DT.datetime(2030,12,26)
+        ,DT.datetime(2031,1,1)
+        ,DT.datetime(2031,4,11)
+        ,DT.datetime(2031,4,14)
+        ,DT.datetime(2031,12,25)
+        ,DT.datetime(2031,12,26)
+        ,DT.datetime(2032,1,1)
+        ,DT.datetime(2032,3,26)
+        ,DT.datetime(2032,3,29)
+        ,DT.datetime(2033,4,15)
+        ,DT.datetime(2033,4,18)
+        ,DT.datetime(2033,12,26)
+        ,DT.datetime(2034,4,7)
+        ,DT.datetime(2034,4,10)
+        ,DT.datetime(2034,12,25)
+        ,DT.datetime(2034,12,26)
+        ,DT.datetime(2035,1,1)
+        ,DT.datetime(2035,3,23)
+        ,DT.datetime(2035,3,26)
+        ,DT.datetime(2035,12,25)
+        ,DT.datetime(2035,12,26)
+        ,DT.datetime(2036,1,1)
+        ,DT.datetime(2036,4,11)
+        ,DT.datetime(2036,4,14)
+        ,DT.datetime(2036,12,25)
+        ,DT.datetime(2036,12,26)
+        ,DT.datetime(2037,1,1)
+        ,DT.datetime(2037,4,3)
+        ,DT.datetime(2037,4,6)
+        ,DT.datetime(2037,12,25)
+        ,DT.datetime(2038,1,1)
+        ,DT.datetime(2038,4,23)
+        ,DT.datetime(2038,4,26)
+        ,DT.datetime(2039,4,8)
+        ,DT.datetime(2039,4,11)
+        ,DT.datetime(2039,12,26)
+        ,DT.datetime(2040,3,30)
+        ,DT.datetime(2040,4,2)
+        ,DT.datetime(2040,12,25)
+        ,DT.datetime(2040,12,26)
+        ,DT.datetime(2041,1,1)
+        ,DT.datetime(2041,4,19)
+        ,DT.datetime(2041,4,22)
+        ,DT.datetime(2041,12,25)
+        ,DT.datetime(2041,12,26)
+        ,DT.datetime(2042,1,1)
+        ,DT.datetime(2042,4,4)
+        ,DT.datetime(2042,4,7)
+        ,DT.datetime(2042,12,25)
+        ,DT.datetime(2042,12,26)
+        ,DT.datetime(2043,1,1)
+        ,DT.datetime(2043,3,27)
+        ,DT.datetime(2043,3,30)
+        ,DT.datetime(2043,12,25)
+        ,DT.datetime(2044,1,1)
+        ,DT.datetime(2044,4,15)
+        ,DT.datetime(2044,4,18)
+        ,DT.datetime(2044,12,26)
+        ,DT.datetime(2045,4,7)
+        ,DT.datetime(2045,4,10)
+        ,DT.datetime(2045,12,25)
+        ,DT.datetime(2045,12,26)
+        ,DT.datetime(2046,1,1)
+        ,DT.datetime(2046,3,19)
+        ,DT.datetime(2046,3,23)
+        ,DT.datetime(2046,12,25)
+        ,DT.datetime(2046,12,26)
+        ,DT.datetime(2047,1,1)
+        ,DT.datetime(2047,4,12)
+        ,DT.datetime(2047,4,15)
+        ,DT.datetime(2047,12,25)
+        ,DT.datetime(2047,12,26)
+        ,DT.datetime(2048,1,1)
+        ,DT.datetime(2048,4,3)
+        ,DT.datetime(2048,4,6)
+        ,DT.datetime(2048,12,25)
+        ,DT.datetime(2049,1,1)
+        ,DT.datetime(2049,4,16)
+        ,DT.datetime(2049,4,19)
+        ,DT.datetime(2050,4,8)
+        ,DT.datetime(2050,4,11)
+        ,DT.datetime(2050,12,26)
+        ,DT.datetime(2051,3,31)
+        ,DT.datetime(2051,4,3)
+        ,DT.datetime(2051,12,25)
+        ,DT.datetime(2051,12,26)
+        ,DT.datetime(2052,1,1)
+        ,DT.datetime(2052,4,19)
+        ,DT.datetime(2052,4,22)
+        ,DT.datetime(2052,12,25)
+        ,DT.datetime(2052,12,26)
+        ,DT.datetime(2053,1,1)
+        ,DT.datetime(2053,4,4)
+        ,DT.datetime(2053,4,7)
+        ,DT.datetime(2053,12,25)
+        ,DT.datetime(2053,12,26)
+        ,DT.datetime(2054,1,1)
+        ,DT.datetime(2054,3,27)
+        ,DT.datetime(2054,3,30)
+        ,DT.datetime(2054,12,25)
+        ,DT.datetime(2055,1,1)
+        ,DT.datetime(2055,4,16)
+        ,DT.datetime(2055,4,19)
+        ,DT.datetime(2056,3,31)
+        ,DT.datetime(2056,4,3)
+        ,DT.datetime(2056,12,25)
+        ,DT.datetime(2056,12,26)
+        ,DT.datetime(2057,1,1)
+        ,DT.datetime(2057,4,20)
+        ,DT.datetime(2057,4,23)
+        ,DT.datetime(2057,12,25)
+        ,DT.datetime(2057,12,26)
+        ,DT.datetime(2058,1,1)
+        ,DT.datetime(2058,4,12)
+        ,DT.datetime(2058,4,15)
+        ,DT.datetime(2058,12,25)
+        ,DT.datetime(2058,12,26)
+        ,DT.datetime(2059,1,1)
+        ,DT.datetime(2059,3,28)
+        ,DT.datetime(2059,3,31)
+        ,DT.datetime(2059,12,25)
+        ,DT.datetime(2059,12,26)
+        ,DT.datetime(2060,1,1)
+        ,DT.datetime(2060,4,16)
+        ,DT.datetime(2060,4,19)
+        ,DT.datetime(2061,4,8)
+        ,DT.datetime(2061,4,11)
+        ,DT.datetime(2061,12,26)
+        ,DT.datetime(2062,3,24)
+        ,DT.datetime(2062,3,27)
+        ,DT.datetime(2062,5,1)
+        ,DT.datetime(2062,12,25)
+        ,DT.datetime(2062,12,26)
+        ,DT.datetime(2063,1,1)
+        ,DT.datetime(2063,4,13)
+        ,DT.datetime(2063,4,16)
+        ,DT.datetime(2063,5,1)
+        ,DT.datetime(2063,12,25)
+        ,DT.datetime(2063,12,26)
+        ,DT.datetime(2064,1,1)
+        ,DT.datetime(2064,4,4)
+        ,DT.datetime(2064,4,7)
+        ,DT.datetime(2064,5,1)
+        ,DT.datetime(2064,12,25)
+        ,DT.datetime(2064,12,26)
+        ,DT.datetime(2065,1,1)
+        ,DT.datetime(2065,3,27)
+        ,DT.datetime(2065,3,30)
+        ,DT.datetime(2065,5,1)
+        ,DT.datetime(2065,12,25)
+    ]
     
-if __name__=='__main__':
+    @staticmethod
+    def periodParser(period):
+        idx = 0
+        for i in range(0,len(period)):
+            if period[i].isalpha():
+                idx = i
+                break;
+        out = {}
+        out['unit'] = int(period[:idx])
+        out['period'] = period[idx:].upper()
+        return out
     
-    out = periodParser('180bd')
-    print out
-    
-
+    @staticmethod
+    def dateAddNumberOfDays(startDate,numberOfBD):        
+        endDate = WD.workday(startDate,numberOfBD,Calendar.holidays)
+        return endDate
+        
+    @staticmethod
+    def dateAddPeriod(startDate,period):
+        parserResult = Calendar.periodParser(period)
+        endDate = {
+         'BD': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']),
+         'W': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*5),
+         'M': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*31),
+         'Y': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*365),
+        }.get(parserResult['period'], Calendar.dateAddNumberOfDays(startDate,1))
+        return endDate        

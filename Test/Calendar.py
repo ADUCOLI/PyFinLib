@@ -6,6 +6,7 @@ Created on Sat Nov 15 17:18:23 2014
 """
 import datetime as DT
 import workdays as WD
+import calendar as CL
 
 class Calendar:
 #    Calendar class with addPeriod utilities and holidays    
@@ -242,19 +243,35 @@ class Calendar:
         out['unit'] = int(period[:idx])
         out['period'] = period[idx:].upper()
         return out
-    
+        
     @staticmethod
-    def dateAddNumberOfDays(startDate,numberOfBD):        
+    def dateAddNumberOfDays(startDate,numberOfBD):
         endDate = WD.workday(startDate,numberOfBD,Calendar.holidays)
         return endDate
+
+    @staticmethod
+    def dateAddNumberOfMonths(startDate,numberOfMonths):
+        month = startDate.month - 1 + numberOfMonths
+        year = startDate.year + month / 12
+        month = month % 12 + 1
+        day = min(startDate.day,CL.monthrange(year,month)[1])
+        endDate = DT.datetime(year,month,day)
+        return Calendar.dateAdjust(endDate)
         
+    @staticmethod
+    def dateAdjust(startDate):
+        endDate = startDate
+        if (endDate in Calendar.holidays) or (endDate.weekday() in set([5, 6])):
+            endDate = Calendar.dateAddNumberOfDays(startDate,1)
+        return endDate        
+            
     @staticmethod
     def dateAddPeriod(startDate,period):
         parserResult = Calendar.periodParser(period)
         endDate = {
          'BD': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']),
          'W': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*5),
-         'M': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*31),
-         'Y': Calendar.dateAddNumberOfDays(startDate,parserResult['unit']*365),
-        }.get(parserResult['period'], Calendar.dateAddNumberOfDays(startDate,1))
-        return endDate        
+         'M': Calendar.dateAddNumberOfMonths(startDate,parserResult['unit']),
+         'Y': Calendar.dateAddNumberOfMonths(startDate,parserResult['unit']*12),
+        }.get(parserResult['period'], Calendar.dateAddNumberOfDays(startDate,1))        
+        return endDate

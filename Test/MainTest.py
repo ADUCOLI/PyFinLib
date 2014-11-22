@@ -7,12 +7,12 @@ Created on Sat Nov 15 10:01:27 2014
 
 import matplotlib.pyplot as plt
 
-import Bootstrap as BT
+import Curves as CV
 
 if __name__=='__main__':
     
-    ins = BT.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls')
-    eonia = BT.Bootstrap(ins)
-    eonia.bootDiscountCurve()
+    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls')
+    eonia = CV.EoniaCurve(ins)
+    eonia.bootstrap()
     plt.plot_date(eonia.maturities(),eonia.discountFactors())
     plt.show()

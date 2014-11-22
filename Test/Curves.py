@@ -8,6 +8,7 @@ Created on Sat Nov 22 12:04:30 2014
 import xlrd
 import sys
 import os
+from abc import ABCMeta, abstractmethod
 
 import ExcelLib as EL
 import DayCountFraction as DCF
@@ -46,34 +47,51 @@ class BootstrapIntrumentSet:
         return len(self.Data['Periods'])
 
 
-class Bootstrap:
+class Curve:
+    __metaclass__ = ABCMeta
 
     def __init__(self,insSet):
         self.InsSet = insSet        
-        self.DiscountCurve = {}
-        self.DiscountCurve['Maturities'] = []
-        self.DiscountCurve['Rates'] = []
+        self.DiscountCurve = []
 
+    def refDate(self):
+        return self.InsSet.refDate()
+    def spotDate(self):
+        return self.InsSet.spotDate()
+    def periods(self):
+        return self.InsSet.periods()
+    def marketQuotes(self):
+        return self.InsSet.marketQuotes()
+    def numPillars(self):
+        return self.InsSet.numInstruments()
     def maturities(self):
-        return self.DiscountCurve['Maturities']
+        return self.InsSet.maturities()
     def discountFactors(self):
-        return self.DiscountCurve['Rates']
-        
-    def bootDiscountCurve(self):
-        basis = 'ACT/360'
+        return self.DiscountCurve
+
+    @abstractmethod        
+    def bootstrap(self): pass
+            
+class EoniaCurve(Curve):
+
+    def __init__(self,insSet):
+        super(EoniaCurve, self).__init__(insSet)
+        self.name = 'EONIA'
+        self.basis = 'ACT/360'
+
+    def bootstrap(self):
         cumSum = 0.
-        ref_date = self.InsSet.refDate()
-        settlement_date = self.InsSet.refDate()
-        for i in range(0,self.InsSet.numInstruments()):
-            maturity = self.InsSet.maturities()[i]
-            self.DiscountCurve['Maturities'].append(maturity)
-            dcf_fromRef = DCF.DayCountFraction(ref_date,maturity,basis)
-            dcf_i = DCF.DayCountFraction(settlement_date,maturity,basis)            
+        ref_date = self.refDate()
+        settlement_date = ref_date
+        for i in range(0,self.numPillars()):
+            maturity = self.maturities()[i]
+            dcf_fromRef = DCF.DayCountFraction(ref_date,maturity,self.basis)
+            dcf_i = DCF.DayCountFraction(settlement_date,maturity,self.basis)            
             mktQuote_i = self.InsSet.marketQuotes()[i]
             if dcf_fromRef <=1.0:
-                self.DiscountCurve['Rates'].append( 1./(1+dcf_fromRef*mktQuote_i))
+                self.DiscountCurve.append( 1./(1+dcf_fromRef*mktQuote_i))
             else:
-                self.DiscountCurve['Rates'].append((1.-mktQuote_i*cumSum)/(1+dcf_i*mktQuote_i))
+                self.DiscountCurve.append((1.-mktQuote_i*cumSum)/(1+dcf_i*mktQuote_i))
         
-            cumSum = cumSum + dcf_i* self.DiscountCurve['Rates'][i]
+            cumSum = cumSum + dcf_i* self.DiscountCurve[i]
             settlement_date = maturity

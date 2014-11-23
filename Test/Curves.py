@@ -8,7 +8,10 @@ Created on Sat Nov 22 12:04:30 2014
 import xlrd
 import sys
 import os
+import math
+import numpy
 from abc import ABCMeta, abstractmethod
+from scipy import interpolate
 
 import ExcelLib as EL
 import DayCountFraction as DCF
@@ -51,8 +54,8 @@ class Curve:
     __metaclass__ = ABCMeta
 
     def __init__(self,insSet):
-        self.InsSet = insSet        
-        self.DiscountCurve = []
+        self.InsSet = insSet
+        self.DayCountFractions = []
 
     def refDate(self):
         return self.InsSet.refDate()
@@ -66,18 +69,28 @@ class Curve:
         return self.InsSet.numInstruments()
     def maturities(self):
         return self.InsSet.maturities()
-    def discountFactors(self):
-        return self.DiscountCurve
+    def dayCountFractions(self):
+        return self.DayCountFractions
 
     @abstractmethod        
     def bootstrap(self): pass
             
-class EoniaCurve(Curve):
+
+class DiscountCurve(Curve):
 
     def __init__(self,insSet):
-        super(EoniaCurve, self).__init__(insSet)
+        super(DiscountCurve, self).__init__(insSet)
         self.name = 'EONIA'
         self.basis = 'ACT/360'
+        self.DiscountFactors = []
+        self.ZeroRates = []
+
+    def name(self):
+        return self.name
+    def discountFactors(self):
+        return self.DiscountFactors
+    def zeroRates(self):
+        return self.ZeroRates
 
     def bootstrap(self):
         cumSum = 0.
@@ -85,13 +98,24 @@ class EoniaCurve(Curve):
         settlement_date = ref_date
         for i in range(0,self.numPillars()):
             maturity = self.maturities()[i]
-            dcf_fromRef = DCF.DayCountFraction(ref_date,maturity,self.basis)
+            dcfFromRefDate = DCF.DayCountFraction(ref_date,maturity,self.basis)
+            self.DayCountFractions.append(dcfFromRefDate)
             dcf_i = DCF.DayCountFraction(settlement_date,maturity,self.basis)            
             mktQuote_i = self.InsSet.marketQuotes()[i]
-            if dcf_fromRef <=1.0:
-                self.DiscountCurve.append( 1./(1+dcf_fromRef*mktQuote_i))
+            if dcfFromRefDate <=1.0:
+                df = 1./(1+dcfFromRefDate*mktQuote_i)
             else:
-                self.DiscountCurve.append((1.-mktQuote_i*cumSum)/(1+dcf_i*mktQuote_i))
+                df = (1.-mktQuote_i*cumSum)/(1+dcf_i*mktQuote_i)
         
-            cumSum = cumSum + dcf_i* self.DiscountCurve[i]
+            zeroRate = -math.log(df)/dcfFromRefDate
+            cumSum = cumSum + dcf_i* df
             settlement_date = maturity
+            
+            self.DiscountFactors.append(df)
+            self.ZeroRates.append(zeroRate)
+        self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+    
+    def getDiscountFactor(self,fixingDate):
+        dcf = DCF.DayCountFraction(self.refDate(),fixingDate,self.basis)
+        zero_rate = self.Interpolator(dcf)
+        return math.exp(-zero_rate*dcf)

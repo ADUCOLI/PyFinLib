@@ -15,12 +15,11 @@ from scipy import interpolate
 
 import ExcelLib as EL
 import DayCountFraction as DCF
-import Calendar as CAL
 import datetime as DT
 
 class BootstrapIntrumentSet:
     
-    def __init__(self,fileName,calendar=CAL.Calendar()):
+    def __init__(self,fileName,calendar):
         currentDir = os.path.dirname(os.path.abspath(__file__))
         sys.path.append(currentDir)
         xl_Name = currentDir + fileName

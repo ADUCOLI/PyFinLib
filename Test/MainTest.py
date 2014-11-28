@@ -8,6 +8,9 @@ import matplotlib.pyplot as plt
 import Calendar as CL
 import Curves as CV
 
+import VModelUtilities as VMU
+import Definitions as DEF
+
 if __name__=='__main__':
     
     eurCal = CL.EURCalendar()
@@ -17,3 +20,5 @@ if __name__=='__main__':
     plt.plot_date(eonia.maturities(),eonia.discountFactors())
     plt.plot_date(eonia.maturities(),eonia.zeroRates())
     plt.show()
+    
+    print VMU.LogNormalBlackFormula(0.4,1.,0.1,0.1,DEF.OptionType.CALL)

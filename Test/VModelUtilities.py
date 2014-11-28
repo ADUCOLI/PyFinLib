@@ -8,10 +8,14 @@ Created on Fri Nov 28 09:31:15 2014
 from scipy.stats import norm
 from scipy.optimize import brent
 import math
-import Definitions as DEF
+import Definitions as DEF    
 
 def LogNormalBlackFormula(fwd,T,vol,K,optType):
+    if optType == DEF.OptionType.FORWARD:
+        return fwd
     vol_t = vol*math.sqrt(T)
+    if DEF.DoubleEquals(vol_t,0.):
+        return DEF.IntrinsicValue(fwd,K,optType)
     d1 = (math.log(fwd/K))/vol_t + 0.5*vol_t
     d2 = d1 - vol_t
     price = {
@@ -20,9 +24,14 @@ def LogNormalBlackFormula(fwd,T,vol,K,optType):
         DEF.OptionType.STRADDLE: fwd*(2.*norm.cdf(d1)-1.0)-K*(2.*norm.cdf(d2)-1.0)
     }
     return price.get(optType,fwd*norm.cdf(d1)-K*norm.cdf(d2))    
+
     
 def NormalBlackFormula(fwd,T,vol,K,optType):
+    if optType == DEF.OptionType.FORWARD:
+        return fwd        
     vol_t = vol*math.sqrt(T)
+    if DEF.DoubleEquals(vol_t,0.):
+        return DEF.IntrinsicValue(fwd,K,optType)    
     d = (fwd-K)/vol_t
     price = {
         DEF.OptionType.CALL: (fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d),
@@ -30,6 +39,7 @@ def NormalBlackFormula(fwd,T,vol,K,optType):
         DEF.OptionType.STRADDLE: (fwd-K)*(2.*norm.cdf(d)-1)+2.*vol_t*norm.pdf(d)
     }
     return price.get(optType,(fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d))
+
 
 def BlackImpliedVol(price,fwd,K,T,optType,modelType):
     def f(x):

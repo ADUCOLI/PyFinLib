@@ -8,8 +8,8 @@ import matplotlib.pyplot as plt
 import Calendar as CL
 import Curves as CV
 
-#import VModelUtilities as VMU
-#import Definitions as DEF
+import VModelUtilities as VMU
+import Definitions as DEF
 
 if __name__=='__main__':
     
@@ -21,5 +21,10 @@ if __name__=='__main__':
     plt.plot_date(eonia.maturities(),eonia.zeroRates())
     plt.show()
     
-#    price = VMU.NormalBlackFormula(0.0888,1.,0.1,0.1,DEF.OptionType.CALL)
-#    print VMU.BlackImpliedVol(price,0.0888,1.,0.1,DEF.OptionType.CALL,DEF.ModelType.NORMAL)
+    fwd = 0.0088
+    T = 1.
+    K = 0.1
+    vol = 0.3456712
+    optType = DEF.OptionType.CALL
+    price = VMU.NormalBlackFormula(fwd,T,vol,K,DEF.OptionType.CALL)
+    vol = VMU.BlackImpliedVol(price,fwd,T,K,DEF.OptionType.CALL,DEF.ModelType.NORMAL)

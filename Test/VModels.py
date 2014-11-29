@@ -63,8 +63,8 @@ class I_VModel:
             optType = DEF.OptionType.CALL
         else:
             optType = DEF.OptionType.PUT
-	otmOptionValue = self.optionFwdPrice(strike, optType)
-	return VMU.BlackImpliedVol(otmOptionValue,fwd,strike,optType,DEF.ModelType.LOGNORMAL)        
+        otmOptionValue = self.optionFwdPrice(strike, optType)
+        return VMU.BlackImpliedVol(otmOptionValue,fwd,strike,optType,DEF.ModelType.LOGNORMAL)        
 
 
     def equivalentNormalVol(self,strike):
@@ -73,8 +73,8 @@ class I_VModel:
             optType = DEF.OptionType.CALL
         else:
             optType = DEF.OptionType.PUT
-	otmOptionValue = self.optionFwdPrice(strike, optType);            
-	return VMU.BlackImpliedVol(otmOptionValue,fwd,strike,optType,DEF.ModelType.NORMAL)
+        otmOptionValue = self.optionFwdPrice(strike, optType);            
+        return VMU.BlackImpliedVol(otmOptionValue,fwd,strike,optType,DEF.ModelType.NORMAL)
 
 
 class BlackModel(I_VModel):

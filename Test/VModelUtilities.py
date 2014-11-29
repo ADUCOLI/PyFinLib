@@ -31,7 +31,7 @@ def NormalBlackFormula(fwd,T,vol,K,optType):
         return fwd        
     vol_t = vol*math.sqrt(T)
     if DEF.DoubleEquals(vol_t,0.):
-        return DEF.IntrinsicValue(fwd,K,optType)    
+        return DEF.IntrinsicValue(fwd,K,optType)
     d = (fwd-K)/vol_t
     price = {
         DEF.OptionType.CALL: (fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d),
@@ -40,12 +40,15 @@ def NormalBlackFormula(fwd,T,vol,K,optType):
     }
     return price.get(optType,(fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d))
 
-
 def BlackImpliedVol(price,fwd,K,T,optType,modelType):
-    def f(x):
+    args = (price,fwd,T,K,optType,modelType)
+    def f(x,*args):
+        price,fwd,K,T,optType,modelType = args
         fval = {
             DEF.ModelType.NORMAL: NormalBlackFormula(fwd,T,x,K,optType) - price,
             DEF.ModelType.LOGNORMAL: LogNormalBlackFormula(fwd,T,x,K,optType) - price
         }
-        return fval.get(modelType,LogNormalBlackFormula(fwd,T,x,K,optType) - price)
-    return brent(f)
+        return abs(fval.get(modelType,LogNormalBlackFormula(fwd,T,x,K,optType) - price))
+    toll = 1e-10
+    brack = (toll,10.)
+    return brent(f,args,brack,toll)

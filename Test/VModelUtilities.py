@@ -8,7 +8,8 @@ Created on Fri Nov 28 09:31:15 2014
 from scipy.stats import norm
 from scipy.optimize import brent
 import math
-import Definitions as DEF    
+import Definitions as DEF
+import NumericalRecipies as NR
 
 def LogNormalBlackFormula(fwd,T,vol,K,optType):
     if optType == DEF.OptionType.FORWARD:
@@ -48,7 +49,8 @@ def BlackImpliedVol(price,fwd,K,T,optType,modelType):
             DEF.ModelType.NORMAL: NormalBlackFormula(fwd,T,x,K,optType) - price,
             DEF.ModelType.LOGNORMAL: LogNormalBlackFormula(fwd,T,x,K,optType) - price
         }
-        return abs(fval.get(modelType,LogNormalBlackFormula(fwd,T,x,K,optType) - price))
+        return fval.get(modelType,LogNormalBlackFormula(fwd,T,x,K,optType) - price)
     toll = 1e-10
     brack = (toll,10.)
-    return brent(f,args,brack,toll)
+    #return scipy.optimize.brent(f,args,brack,toll) lib minimizer (use absolute value fun)
+    return NR.BrentRootSolver(f,args,brack)

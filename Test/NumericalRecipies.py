@@ -5,6 +5,12 @@ Created on Mon Dec 01 17:52:31 2014
 @author: Emanuele Mercuri
 """
 
+import numpy as NP
+
+###############################################################
+########  BRENT ROOT SOLVER  ##################################
+###############################################################
+
 def BrentRootSolver(f,args,brack,TOLL=0.0000001,MAX_ITER = 100):
             
     #Set extremes of the interval
@@ -82,3 +88,57 @@ def BrentRootSolver(f,args,brack,TOLL=0.0000001,MAX_ITER = 100):
         if (abs(f_x1) < TOLL):
             return s
     return x1
+    
+    
+    
+###############################################################
+########  CATMULL-ROM SPLINE  #################################
+## http://en.wikipedia.org/wiki/Cubic_Hermite_spline        ###
+###############################################################
+
+def CatmullRomSpline(fun,x,nodes):
+    # fun vector of function values to be interpolated
+    # x axis nodes
+    # nodes target nodes to interpolate
+    
+    N, NN = len(x), len(nodes)
+    
+    def h00(t): return (2.0*t*t*t - 3.0*t*t +1.)
+    def h01(t): return (t*t*t - 2.0*t*t +t)
+    def h10(t): return (-2.0*t*t*t + 3.0*t*t)
+    def h11(t): return (t*t*t - t*t)
+    def map(x,xk1,xk): return ((x-xk)/(xk1-xk))
+    interpolation = NP.zeros(NN)
+
+    for i in range(0,NN):
+        node_tgt = nodes[i]
+        values = NP.array(NP.abs(node_tgt-x))
+        look_for = values.min()
+        for j in range(0,N):
+            if(values[j] == look_for):
+                if(node_tgt-x[j]<=0.0):
+                    K = j-1
+                else:
+                    K = j
+                break
+
+        if(K<=0):
+            interpolation[i] = fun[1]
+            continue
+        if(K+2>=N):
+            interpolation[i] = fun[N-2]
+            continue
+        
+        xK_1, fK_1 = x[K-1], fun[K-1]
+        xK, fK = x[K], fun[K]
+        xK1, fK1 = x[K+1], fun[K+1]
+        xK2, fK2 = x[K+2], fun[K+2]
+        y_tgt = map(node_tgt,xK1,xK)
+
+        alphaK_1 = -(xK1-xK)/(xK1-xK_1)*h01(y_tgt)
+        alphaK = h00(y_tgt) - (xK1-xK)/(xK2-xK)*h11(y_tgt)
+        alphaK1 = h10(y_tgt) + (xK1-xK)/(xK1-xK_1)*h01(y_tgt)
+        alphaK2 = (xK1-xK)/(xK2-xK)*h11(y_tgt)
+
+        interpolation[i] = alphaK_1*fK_1 + alphaK*fK + alphaK1*fK1 + alphaK2*fK2
+    return interpolation

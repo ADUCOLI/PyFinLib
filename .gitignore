@@ -6,6 +6,7 @@
 **/*.pyc
 **/*.suo
 **/*.log
+**/*.hdf5
 **/.metadata
 **/.svn
 **/build

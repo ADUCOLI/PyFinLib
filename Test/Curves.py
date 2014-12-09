@@ -90,6 +90,17 @@ class DiscountCurve(Curve):
         return self.DiscountFactors
     def zeroRates(self):
         return self.ZeroRates
+    def dictDataToStore(self):
+        data = {}        
+        data[self.name] = {
+            'RefDate' : self.refDate(),
+            'SpotDate' : self.spotDate(),
+            'Discount' : self.DiscountFactors,
+            'Zero Rate' : self.ZeroRates,
+            'Maturities' : self.maturities()
+            }
+        dataToStore = {self.refDate():data}
+        return dataToStore
 
     def bootstrap(self):
         cumSum = 0.

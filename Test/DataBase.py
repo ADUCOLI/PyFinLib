@@ -92,7 +92,7 @@ class DataBaseHdf5():
         
         self.createDataBaseHdf5()
         
-        self.isLocked = False
+        self.open = False
         
     def createDataBaseHdf5(self):
         
@@ -104,6 +104,24 @@ class DataBaseHdf5():
         
         f.close()
         
+    def openDB(self):
+        
+        if self.open is True:
+            print 'DB already open!'
+            return
+        self.store = pd.HDFStore(self.fileName)
+        self.open = True
+        return
+        
+    def closeDB(self):
+        
+        if self.open is False:
+            print 'DB already closed!'
+            return
+        self.store.close()
+        self.open = False
+        return
+        
     def saveCurveData(self, dictData):
 
         if type(dictData) is dict:
@@ -112,40 +130,101 @@ class DataBaseHdf5():
 
         else:
 
-            print 'Invalid type in input'
+            print 'Invalid type in input' + str(type(dictData))
             return            
             
-        store = pd.HDFStore(self.fileName)
+        self.openDB()
+#        self.store = pd.HDFStore(self.fileName)
+#        self.open = True
             
         try:
 
-            curvePanel = store['Curve']
+            self.checkInputData(panelData)
+            curvePanel = self.store['Curve']
             curvePanel = curvePanel.join(panelData)
-            store['Curve'] = curvePanel     
+            self.store.remove('Curve')
+            self.store['Curve'] = curvePanel    
 
         except:
-
-            store['Curve'] = panelData
             
-        store.flush()
-        store.close()
+            print 'New table Curve initialized!'
+            self.store['Curve'] = panelData
+        
+        self.store.flush()
+        self.closeDB()
+#        self.store.close()
+#        self.open = False
+        
+    def checkInputData(self, panelData):
+        
+        if self.store.keys() is 0:
+            return
+        
+        currentPanel = self.store['Curve']
+        
+        currentPanel_maxDate = max(currentPanel.keys())
+        data_minDate = min(panelData.keys())
+        if currentPanel_maxDate < data_minDate:
+            return
+        
+        datesToBeDeleted = pd.bdate_range(data_minDate,currentPanel_maxDate)
+        
+        for date in datesToBeDeleted:
+            dateStr_i = str(date)[:10].replace('-','/')
+            self.deleteCurveData(dateStr_i)
+        
+        return
 
     def deleteCurveData(self, dateToDelete):
         
-        store = pd.HDFStore(self.fileName)
-                         
+        if self.open is False:
+            self.openDB()
+#            self.store = pd.HDFStore(self.fileName)
+            
         try:
 
-            curvePanel = store['Curve']
+            curvePanel = self.store['Curve']
             del curvePanel[dateToDelete]
-            store['Curve'] = curvePanel     
+            print ('I am deleting data referring to ' + dateToDelete)            
+            self.store.remove('Curve')
+            self.store['Curve'] = curvePanel   
 
         except:
             
             print 'Empty data, table or date not found!'
             
-        store.close()
+        self.store.flush()
+        
+        if self.open is False: 
+            self.closeDB()
+#            self.store.close()
+        return
+        
+    def getStoreCurve(self):
+        
+        self.openDB()
+#        self.store = pd.HDFStore(self.fileName)   
+#        self.open = True
+        curvePanel = self.store['Curve']  
+        self.closeDB()
+#        self.store.close()
+#        self.open = False
+        return curvePanel
+    
+    def refreshFile(self):
 
+        if self.open is False:
+            self.openDB()
+#            self.store = pd.HDFStore(self.fileName)
+
+        curvePanel = self.store['Curve']
+        self.closeDB()
+#        self.store.close()
+        
+        os.remove(self.fileName)      
+        self.store = pd.HDFStore(self.fileName)
+        self.store['Curve'] = curvePanel
+        self.store.close()
 
 if __name__ == "__main__":
     

@@ -90,7 +90,9 @@ class DataBaseHdf5():
         
         self.fileName = dbConfiguration.totalPath() + '.hdf5'
         
-        self.createDataBaseHdf5()
+        if os.path.exists(self.fileName) is False:
+        
+            self.createDataBaseHdf5()
         
         self.open = False
         

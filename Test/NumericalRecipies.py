@@ -142,3 +142,66 @@ def CatmullRomSpline(fun,x,nodes):
 
         interpolation[i] = alphaK_1*fK_1 + alphaK*fK + alphaK1*fK1 + alphaK2*fK2
     return interpolation
+
+###############################################################
+########  NEWTON LAGRANGE POLYNOMIAL INTERPOLATION  ###########
+    ### http://en.wikipedia.org/wiki/Newton_polynomial ###
+###############################################################
+
+def NewtonLinearInterpol(x,y,z):
+    
+    m,n = y.shape
+    
+    a = NP.zeros((max(m,n),max(m,n)))
+    f = NP.array(NP.zeros(z.shape))    
+    
+    for j in range(m):
+        a[:,0] = (y[j,:]).transpose()
+        
+        for i in range(1,n):
+            a[i:n,i] = (a[i:n,i-1] - a[i-1,i-1])/(x[j,i:n]-x[j,i-1]).transpose()
+
+        f[j,:] = a[n-1,n-1]*(z-x[j,n-2]) + a[n-2,n-2]
+        
+        for i in range(2,n):
+            f[j,:] = f[j,:]*(z-x[j,n-1-i]) + a[n-1-i,n-1-i]
+            
+    return f
+    
+###############################################################
+########  HERMITE LAGRANGE POLYNOMIAL INTERPOLATION  ###########
+    ### http://en.wikipedia.org/wiki/Newton_polynomial ###
+###############################################################
+    
+def HermiteLinearInterpol(x,y,dy,z):
+    
+    n = max(x.shape)
+    m = max(z.shape)
+    herm = []
+    
+    for j in range(m):
+        xx = z[:,j] 
+        hxv = 0
+        for i in range(n):
+            den = 1 
+            num = 1 
+            xn = x[:,i] 
+            derLi = 0
+            for k in range(n):
+                if k is not i: 
+                    num = num*(xx-x[:,k]) 
+                    arg = xn-x[:,k];
+                    den = den*arg 
+                    derLi = derLi+1/arg
+                
+            Lix2 = pow((num/den),2) 
+            p = (1-2*(xx-xn)*derLi)*Lix2;
+            q = (xx-xn)*Lix2 
+            hxv = hxv+(y[:,i]*p+dy[:,i]*q)
+        herm.append(hxv)
+    return NP.array(herm).transpose()
+
+
+
+
+    

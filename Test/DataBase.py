@@ -26,15 +26,15 @@ ModeOptions = {
 
 Groups = [
     'Curves',
-    'VolCapFloor'
+    'Futures'
 ]
 
 ###############################################################################
 ###############################################################################
 
 SubGrouops ={
-    'Curves' : ['Eonia','Eur3m','Eur6m']
-#    'VolCapFloor' : ['Normal Vols','Black Vols']
+    'Curves' : ['Eonia','Eur3m','Eur6m'],
+    'Futures' : ['Eur3m']
 }
 
 ###############################################################################
@@ -136,12 +136,10 @@ class DataBaseHdf5():
             return            
             
         self.openDB()
-#        self.store = pd.HDFStore(self.fileName)
-#        self.open = True
             
         try:
 
-            self.checkInputData(panelData)
+            self.checkInputData(panelData,'Curve')
             curvePanel = self.store['Curve']
             curvePanel = curvePanel.join(panelData)
             self.store.remove('Curve')
@@ -154,15 +152,42 @@ class DataBaseHdf5():
         
         self.store.flush()
         self.closeDB()
-#        self.store.close()
-#        self.open = False
         
-    def checkInputData(self, panelData):
+    def saveFuturesData(self, dictData):
+        
+        if type(dictData) is dict:
+            
+            panelData = pd.Panel(dictData) 
+
+        else:
+
+            print 'Invalid type in input' + str(type(dictData))
+            return            
+            
+        self.openDB()
+        
+        try:
+
+            self.checkInputData(panelData, 'Futures')
+            futuresPanel = self.store['Futures']
+            futuresPanel = futuresPanel.join(panelData)
+            self.store.remove('Futures')
+            self.store['Futures'] = futuresPanel    
+
+        except:
+            
+            print 'New table Curve initialized!'
+            self.store['Futures'] = panelData
+        
+        self.store.flush()
+        self.closeDB()
+       
+    def checkInputData(self, panelData, panelName):
         
         if self.store.keys() is 0:
             return
         
-        currentPanel = self.store['Curve']
+        currentPanel = self.store[panelName]
         
         currentPanel_maxDate = max(currentPanel.keys())
         data_minDate = min(panelData.keys())
@@ -181,7 +206,6 @@ class DataBaseHdf5():
         
         if self.open is False:
             self.openDB()
-#            self.store = pd.HDFStore(self.fileName)
             
         try:
 
@@ -199,56 +223,24 @@ class DataBaseHdf5():
         
         if self.open is False: 
             self.closeDB()
-#            self.store.close()
         return
         
     def getStoreCurve(self):
         
         self.openDB()
-#        self.store = pd.HDFStore(self.fileName)   
-#        self.open = True
         curvePanel = self.store['Curve']  
         self.closeDB()
-#        self.store.close()
-#        self.open = False
         return curvePanel
     
     def refreshFile(self):
 
         if self.open is False:
             self.openDB()
-#            self.store = pd.HDFStore(self.fileName)
 
         curvePanel = self.store['Curve']
         self.closeDB()
-#        self.store.close()
         
         os.remove(self.fileName)      
         self.store = pd.HDFStore(self.fileName)
         self.store['Curve'] = curvePanel
         self.store.close()
-
-if __name__ == "__main__":
-    
-    import Calendar as CL
-    import Curves as CV
-    import sys
-    
-    sys.path.append('C:\Users\Andrea\Documents\Python\Test')
-    sys.path.append('C:\Users\Andrea\Documents\PyFinLib\Test')
-    
-    dbConfig = DataBaseConfiguration('testDB_2')
-    
-    db = DataBaseHdf5(dbConfig)
-    
-    eurCal = CL.EURCalendar()
-    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls',eurCal)
-    eonia = CV.DiscountCurve(ins)
-    eonia.bootstrap()
-
-
-    db.saveCurveData(eonia.dictDataToStore())
-    
-#    db.deleteCurveData('2014-09-27')
-    
-    

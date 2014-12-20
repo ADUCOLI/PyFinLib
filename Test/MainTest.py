@@ -12,6 +12,7 @@ import DataBase as DB
 import VModelUtilities as VMU
 import Definitions as DEF
 
+import xlrd
 import sys
 import os
 
@@ -27,14 +28,13 @@ def readSingleStirData(name,startRow):
     singleData = {}
     
     Id = EX.xl_Get_Data_ToUpperCaseString(xl_Name, 8, startRow, 6, startRow, 6)[0]
-    print Id    
     
     singleData[Id] ={}
     
     singleData[Id]['Forward'] = EX.xl_Get_Data(xl_Name, 8, startRow+1, 2, startRow+1, 2)
+       
+    singleData[Id]['Expiry'] = DT.datetime.strptime(EX.xl_Get_Data(xl_Name, 8, startRow+4, 2, startRow+4, 2)[0], '%m/%d/%Y')
     
-    singleData[Id]['Expiry'] = (EX.xl_Get_Data(xl_Name, 8, startRow+4, 2, startRow+4, 2))
-#        DT.datetime(
     singleData[Id]['Strikes'] = EX.xl_Get_Data(xl_Name, 8, startRow, 7, startRow, 19)
 
     singleData[Id]['CallBid'] = EX.xl_Get_Data(xl_Name, 8, startRow+1, 7, startRow+1, 19)
@@ -45,26 +45,16 @@ def readSingleStirData(name,startRow):
     
     singleData[Id]['PutAsk'] = EX.xl_Get_Data(xl_Name, 8, startRow+4, 7, startRow+4, 19)
     
-    return singleData
-
-#def readStirData(name):
-#    
-#    data = {}    
-#    
-#    data['forward']EX.xl_Get_Data(name, num_Sheet, row_start, col_start, row_end, col_end)
-    
+    return singleData    
     
 
 if __name__=='__main__':
     
-#    eurCal = CL.EURCalendar()
-#    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls',eurCal)
-#    eonia = CV.DiscountCurve(ins)
-#    eonia.bootstrap()
-#    plt.plot_date(eonia.maturities(),eonia.discountFactors())
-#    plt.plot_date(eonia.maturities(),eonia.zeroRates())
-#    plt.show()
-#    
+    eurCal = CL.EURCalendar()
+    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls',eurCal)
+    eonia = CV.DiscountCurve(ins)
+    eonia.bootstrap()
+    
 #    fwd = 0.0088
 #    T = 1.
 #    K = 0.1
@@ -75,17 +65,14 @@ if __name__=='__main__':
 
     # Database test    
     
-#    dbConfig = DB.DataBaseConfiguration('testDB')
-#    
-#    db = DB.DataBaseHdf5(dbConfig)
-#    
-#    eurCal = CL.EURCalendar()
-#    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls',eurCal)
-#    eonia = CV.DiscountCurve(ins)
-#    eonia.bootstrap()
-#
-#    db.saveCurveData(eonia.dictDataToStore())
+    dbConfig = DB.DataBaseConfiguration('testDB')
+    
+    db = DB.DataBaseHdf5(dbConfig)
+    
+    db.saveCurveData(eonia.dictDataToStore())
     
     data = readSingleStirData('\MarketdataCurve.xlsm',2)
     
-    print data
+    print data    
+    
+    db.saveFuturesData(data)

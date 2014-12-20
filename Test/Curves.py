@@ -14,7 +14,7 @@ from abc import ABCMeta, abstractmethod
 from scipy import interpolate
 
 import ExcelLib as EL
-import DayCountFraction as DCF
+import DateLib as DL
 import datetime as DT
 
 class BootstrapIntrumentSet:
@@ -108,9 +108,9 @@ class DiscountCurve(Curve):
         settlement_date = ref_date
         for i in range(0,self.numPillars()):
             maturity = self.maturities()[i]
-            dcfFromRefDate = DCF.DayCountFraction(ref_date,maturity,self.basis)
+            dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,self.basis)
             self.DayCountFractions.append(dcfFromRefDate)
-            dcf_i = DCF.DayCountFraction(settlement_date,maturity,self.basis)            
+            dcf_i = DL.DayCountFraction(settlement_date,maturity,self.basis)            
             mktQuote_i = self.InsSet.marketQuotes()[i]
             if dcfFromRefDate <=1.0:
                 df = 1./(1+dcfFromRefDate*mktQuote_i)
@@ -126,6 +126,6 @@ class DiscountCurve(Curve):
         self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
     
     def getDiscountFactor(self,fixingDate):
-        dcf = DCF.DayCountFraction(self.refDate(),fixingDate,self.basis)
+        dcf = DL.DayCountFraction(self.refDate(),fixingDate,self.basis)
         zero_rate = self.Interpolator(dcf)
         return math.exp(-zero_rate*dcf)

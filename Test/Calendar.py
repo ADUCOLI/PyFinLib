@@ -55,8 +55,8 @@ class Calendar:
          'W': self.dateAddNumberOfDays(startDate,parserResult['unit']*5),
          'M': self.dateAddNumberOfMonths(startDate,parserResult['unit']),
          'Y': self.dateAddNumberOfMonths(startDate,parserResult['unit']*12),
-        }.get(parserResult['period'], self.dateAddNumberOfDays(startDate,1))        
-        return endDate
+        }
+        return endDate.get(parserResult['period'], self.dateAddNumberOfDays(startDate,1))
         
         
 class EURCalendar(Calendar):

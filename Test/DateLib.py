@@ -5,7 +5,6 @@ Created on Sat Nov 22 10:04:18 2014
 @author: Ducoli & Mercuri
 """
 
-import Calendar as CL
 import datetime as DT
 import math
 
@@ -15,7 +14,11 @@ def DayCountFraction(startDate,endDate,basis):
      'ACT/360': (endDate-startDate).days/360.
     }
     return dcf.get(basis,(endDate-startDate).days/365.)
+
 	
+##############################################################################
+## UTILITY CLASS TO COMPUTE INTERNATIONAL MONEY MARKET DATES
+##############################################################################
 
 class IMMFutureDate:
     
@@ -45,15 +48,13 @@ class IMMFutureDate:
         immNextLastTradingDate = refDate
         for i in range(0,self.FutureNumber):
             immNextLastTradingDate = self.IMMNextFutureContractDate(immNextLastTradingDate)
-            if(i+1<self.FutureNumber):
-                immNextLastTradingDate = DT.datetime(immNextLastTradingDate.year,immNextLastTradingDate.month,immNextLastTradingDate.day+1)
         return immNextLastTradingDate
         
     def IMMNextFutureContractDate(self,refDate):
         adjNextImmMonth = int(math.ceil(float(refDate.month)/3)*3) - refDate.month
         moveRefDate = self.TgtCalendar.dateAddNumberOfMonths(refDate,adjNextImmMonth)
         immLastTradingDate = self.IMMFutureContractLastTradingDate(moveRefDate.year,moveRefDate.month)
-        if((adjNextImmMonth==0) & (moveRefDate.day > immLastTradingDate.day)):
+        if((adjNextImmMonth==0) & (moveRefDate.day >= immLastTradingDate.day)):
             moveImmDate = self.TgtCalendar.dateAddNumberOfMonths(immLastTradingDate,3)
             immLastTradingDate = self.IMMFutureContractLastTradingDate(moveImmDate.year,moveImmDate.month)
         return immLastTradingDate

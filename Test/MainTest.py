@@ -50,8 +50,7 @@ def readSingleStirData(name,startRow):
 
 if __name__=='__main__':
     
-    eurCal = CL.EURCalendar()
-    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls',eurCal)
+    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls')
     eonia = CV.DiscountCurve(ins)
     eonia.bootstrap()
     
@@ -65,14 +64,14 @@ if __name__=='__main__':
 
     # Database test    
     
-    dbConfig = DB.DataBaseConfiguration('testDB')
+    #dbConfig = DB.DataBaseConfiguration('testDB')
     
-    db = DB.DataBaseHdf5(dbConfig)
+    #db = DB.DataBaseHdf5(dbConfig)
     
-    db.saveCurveData(eonia.dictDataToStore())
+    #db.saveCurveData(eonia.dictDataToStore())
     
-    data = readSingleStirData('\MarketdataCurve.xlsm',2)
+    #data = readSingleStirData('\MarketdataCurve.xlsm',2)
     
-    print data    
+    #print data    
     
-    db.saveFuturesData(data)
+    #db.saveFuturesData(data)

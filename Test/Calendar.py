@@ -30,35 +30,69 @@ class Calendar:
         out['period'] = period[idx:].upper()
         return out
         
-    def dateAddNumberOfDays(self,startDate,numberOfBD):
+    def dateAddNumberOfDays(self,startDate,numberOfBD,adjustmentRule):
         endDate = WD.workday(startDate,numberOfBD,self.Holidays)
-        return endDate
+        return self.dateAdjust(endDate,adjustmentRule)
 
-    def dateAddNumberOfMonths(self,startDate,numberOfMonths):
+    def dateAddNumberOfMonths(self,startDate,numberOfMonths,adjustmentRule):
         month = startDate.month - 1 + numberOfMonths
         year = startDate.year + month / 12
         month = month % 12 + 1
         day = min(startDate.day,CL.monthrange(year,month)[1])
         endDate = DT.datetime(year,month,day)
-        return self.dateAdjust(endDate)
+        return self.dateAdjust(endDate,adjustmentRule)
         
-    def dateAdjust(self,startDate):
+    def dateAdjust(self,startDate,adjustmentRule):
+        endDate = {
+         'N': self.__dateAdjustNone(startDate),
+         'P': self.__dateAdjustPreceding(startDate),
+         'F': self.__dateAdjustFollowing(startDate),
+         'MF': self.__dateAdjustModifiedFollowing(startDate),
+         'MP': self.__dateAdjustModifiedPreceding(startDate)
+        }
+        return endDate.get(adjustmentRule, self.__dateAdjustNone(startDate))
+
+    def __dateAdjustNone(self,startDate):
+        return startDate
+
+    def __dateAdjustFollowing(self,startDate):
         endDate = startDate
         if (endDate in self.Holidays) or (endDate.weekday() in set([5, 6])):
-            endDate = self.dateAddNumberOfDays(startDate,1)
-        return endDate        
+            endDate = self.dateAddNumberOfDays(startDate,1,"F")
+        return endDate
+
+    def __dateAdjustPreceding(self,startDate):
+        endDate = startDate
+        if (endDate in self.Holidays) or (endDate.weekday() in set([5, 6])):
+            endDate = self.dateAddNumberOfDays(startDate,-1,"P")
+        return endDate
+        
+    def __dateAdjustModifiedFollowing(self,startDate):
+        endDate = startDate
+        if (endDate in self.Holidays) or (endDate.weekday() in set([5, 6])):
+            endDate = self.dateAddNumberOfDays(startDate,1,"MF")
+            if(endDate.month != startDate.month):
+                endDate = self.dateAddNumberOfDays(startDate,-1,"MF")
+        return endDate
+
+    def __dateAdjustModifiedPreceding(self,startDate):
+        endDate = startDate
+        if (endDate in self.Holidays) or (endDate.weekday() in set([5, 6])):
+            endDate = self.dateAddNumberOfDays(startDate,-1,"MP")
+            if(endDate.month != startDate.month):
+                endDate = self.dateAddNumberOfDays(startDate,1,"MP")
+        return endDate
             
-    def dateAddPeriod(self,startDate,period):
+    def dateAddPeriod(self,startDate,period,adjustmentRule):
         parserResult = Calendar.periodParser(period)
         endDate = {
-         'BD': self.dateAddNumberOfDays(startDate,parserResult['unit']),
-         'W': self.dateAddNumberOfDays(startDate,parserResult['unit']*5),
-         'M': self.dateAddNumberOfMonths(startDate,parserResult['unit']),
-         'Y': self.dateAddNumberOfMonths(startDate,parserResult['unit']*12),
+         'BD': self.dateAddNumberOfDays(startDate,parserResult['unit'],adjustmentRule),
+         'W': self.dateAddNumberOfDays(startDate,parserResult['unit']*5,adjustmentRule),
+         'M': self.dateAddNumberOfMonths(startDate,parserResult['unit'],adjustmentRule),
+         'Y': self.dateAddNumberOfMonths(startDate,parserResult['unit']*12,adjustmentRule),
         }
-        return endDate.get(parserResult['period'], self.dateAddNumberOfDays(startDate,1))
-        
-        
+        return endDate.get(parserResult['period'], self.dateAddNumberOfDays(startDate,1,adjustmentRule))
+
 class EURCalendar(Calendar):
     
     def __init__(self):

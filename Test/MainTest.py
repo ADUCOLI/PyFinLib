@@ -53,15 +53,16 @@ if __name__=='__main__':
     ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls')
     eonia = CV.DiscountCurve(ins)
     eonia.bootstrap()
-    
-#    fwd = 0.0088
-#    T = 1.
-#    K = 0.1
-#    vol = 0.3456712
-#    optType = DEF.OptionType.CALL
-#    price = VMU.NormalBlackFormula(fwd,T,vol,K,DEF.OptionType.CALL)
-#    vol = VMU.BlackImpliedVol(price,fwd,T,K,DEF.OptionType.CALL,DEF.ModelType.NORMAL)
+    #plt.plot(eonia.dayCountFractions(),eonia.discountFactors())
+    #plt.plot(eonia.dayCountFractions(),eonia.zeroRates())
 
+    eur3M = CV.ForwardCurve(ins)
+    eur3M.bootstrap()
+    for i in range(0,len(eur3M.zeroRates())):
+        print (i,eur3M.dayCountFractions()[i],eur3M.discountFactors()[i],eur3M.zeroRates()[i])
+    plt.plot(eur3M.dayCountFractions(),eur3M.discountFactors(),'o')
+    #plt.plot(eur3M.dayCountFractions(),eur3M.zeroRates(),'o')
+    
     # Database test    
     
     #dbConfig = DB.DataBaseConfiguration('testDB')

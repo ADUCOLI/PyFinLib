@@ -166,7 +166,15 @@ class Curve:
         self.InsSet = insSet
         self.DayCountFractions = []
         self.Maturities = []
+        self.DiscountFactors = []
+        self.ZeroRates = []
 
+    def name(self):
+        return self.Name
+    def discountFactors(self):
+        return self.DiscountFactors
+    def zeroRates(self):
+        return self.ZeroRates
     def refDate(self):
         return self.InsSet.refDate()
     def instrumentsConventions(self):
@@ -180,26 +188,6 @@ class Curve:
     def dayCountFractions(self):
         return self.DayCountFractions
 
-    @abstractmethod        
-    def bootstrap(self): pass
-            
-
-class DiscountCurve(Curve):
-
-    def __init__(self,insSet):
-        super(DiscountCurve, self).__init__(insSet)
-        self.name = 'EONIA'
-        self.DiscountFactors = []
-        self.ZeroRates = []
-
-    def name(self):
-        return self.name
-    def discountFactors(self):
-        return self.DiscountFactors
-    def zeroRates(self):
-        return self.ZeroRates
-    def numPillars(self):
-        return 33        
     def dictDataToStore(self):
         data = {}        
         data[self.name] = {
@@ -211,11 +199,31 @@ class DiscountCurve(Curve):
         dataToStore = {self.refDate():data}
         return dataToStore
 
+    def getDiscountFactor(self,fixingDate,basis):
+        if (self.Interpolator is None):
+            raise ValueError('Interpolator not yet implemented in bootstap method')
+        dcf = DL.DayCountFraction(self.refDate(),fixingDate,basis)
+        zero_rate = self.Interpolator(dcf)
+        return math.exp(-zero_rate*dcf)
+
+    @abstractmethod        
+    def bootstrap(self): pass
+            
+
+class DiscountCurve(Curve):
+
+    def __init__(self,insSet):
+        super(DiscountCurve, self).__init__(insSet)
+        self.Name = 'EONIA'
+
+    def rangePillars(self):
+        return range(0,33)
+
     def bootstrap(self):
         cumSum = 0.
         ref_date = self.refDate()
         settlement_date = ref_date
-        for i in range(0,self.numPillars()):
+        for i in self.rangePillars():
             instConvention = self.instrumentsConventions()[i]
             (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
             dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
@@ -237,8 +245,116 @@ class DiscountCurve(Curve):
             self.DiscountFactors.append(df)
             self.ZeroRates.append(zeroRate)
         self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
-    
-    def getDiscountFactor(self,fixingDate):
-        dcf = DL.DayCountFraction(self.refDate(),fixingDate,self.basis)
-        zero_rate = self.Interpolator(dcf)
-        return math.exp(-zero_rate*dcf)
+        
+class ForwardCurve(Curve):
+
+    def __init__(self,insSet):
+        super(ForwardCurve, self).__init__(insSet)
+        self.Name = 'EURIBOR_3M'
+        lenght = len(self.rangePillars())
+        self.DayCountFractions = [0]*lenght
+        self.Maturities = [0]*lenght
+        self.DiscountFactors = [0]*lenght
+        self.ZeroRates = [0]*lenght
+        self.MapTickerToIndex = {
+            'EUR003M' : 2,
+            'EUFR0AD' : 0,
+            'EUFR0BE' : 1,
+            'EUFR0CF' : 5,
+            'EUFR0DG' : 3,
+            'EUFR0EH' : 4,
+            'EUFR0FI' : 8,
+            'EUFR0GJ' : 6,
+            'EUFR0HK' : 7,
+            'EUFR0I1' : 9}        
+
+    def rangePillars(self):
+        return range(33,43)
+    def rangeDepo(self):
+        rng = self.rangePillars()
+        return [rng[0]]
+    def rangePrincipalFras(self):
+        rng = self.rangePillars()
+        return (rng[3],rng[6],rng[9])
+    def rangeSecondaryFras(self):
+        rng = self.rangePillars()
+        return (rng[1],rng[2],rng[4],rng[5],rng[7],rng[8])
+
+    def bootstrap(self):
+        df_pre = 0.
+        ref_date = self.refDate()
+
+        # Deposit Bootstrap
+        for i in self.rangeDepo():
+            instConvention = self.instrumentsConventions()[i]
+            index = self.MapTickerToIndex.get(instConvention.ticker())
+            (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
+            dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)            
+            dcf = DL.DayCountFraction(startDate,maturity,instConvention.dayCountBasis)
+            mktQuote = self.InsSet.marketQuotes()[i]
+            df = 1.0/(1.0+dcf*mktQuote)
+
+            self.Maturities[index] = maturity
+            self.DayCountFractions[index] = dcfFromRefDate
+            self.DiscountFactors[index] = df
+            self.ZeroRates[index] = -math.log(df)/dcfFromRefDate
+            df_pre = df
+
+        # FRA expiry 6M,9M,12M Bootstrap
+        for i in self.rangePrincipalFras() :
+            instConvention = self.instrumentsConventions()[i]
+            index = self.MapTickerToIndex.get(instConvention.ticker())
+            (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
+            dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
+            dcf = DL.DayCountFraction(startDate,maturity,instConvention.dayCountBasis)
+            mktQuote = self.InsSet.marketQuotes()[i]
+            df_fwd_start = 1.0/(1.0+dcf*mktQuote)
+            df = df_pre*df_fwd_start
+            
+            self.Maturities[index] = maturity
+            self.DayCountFractions[index] = dcfFromRefDate
+            self.DiscountFactors[index] = df
+            self.ZeroRates[index] = -math.log(df)/dcfFromRefDate
+            df_pre = df
+
+        # FRA expiry 1M,2M,4M,5M,7M,8M,10M,11M Bootstrap
+        rngSecFras = self.rangeSecondaryFras()
+        self.__FraCrabBootstrap(rngSecFras[0],'EUR003M','EUFR0CF') #1x4
+        self.__FraCrabBootstrap(rngSecFras[1],'EUR003M','EUFR0CF') #2x5
+        self.__FraCrabBootstrap(rngSecFras[2],'EUFR0CF','EUFR0FI') #4x7
+        self.__FraCrabBootstrap(rngSecFras[3],'EUFR0CF','EUFR0FI') #5x8
+        self.__FraCrabBootstrap(rngSecFras[4],'EUFR0FI','EUFR0I1') #7x10
+        self.__FraCrabBootstrap(rngSecFras[5],'EUFR0FI','EUFR0I1') #8x11
+        
+        #self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+                
+    def __FraCrabBootstrap(self,instIndex,tickerPrePillar,tickerPostPillar):
+        # FRA expiry 1M,2M,4M,5M,7M,8M,10M,11M Bootstrap
+        ref_date = self.refDate()
+        instConvention = self.instrumentsConventions()[instIndex]
+        indexPrePillar = self.MapTickerToIndex.get(tickerPrePillar)
+        indexPostPillar = self.MapTickerToIndex.get(tickerPostPillar)
+        
+        index = self.MapTickerToIndex.get(instConvention.ticker())
+        (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
+        dcfMaturityFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
+        dcfstartDateFromRefDate = DL.DayCountFraction(ref_date,startDate,instConvention.dayCountBasis)
+        
+        #linear Interpolation
+        xPrePillar = DL.DayCountFraction(ref_date,self.maturities()[indexPrePillar],instConvention.dayCountBasis)
+        xPostPillar = DL.DayCountFraction(ref_date,self.maturities()[indexPostPillar],instConvention.dayCountBasis)
+        yPrePillar = self.zeroRates()[indexPrePillar]
+        yPostPillar = self.zeroRates()[indexPostPillar]
+        yInterp = (xPostPillar-dcfMaturityFromRefDate)*yPrePillar + (dcfMaturityFromRefDate-xPrePillar)*yPostPillar
+        yInterp = yInterp/(xPostPillar-xPrePillar)
+        dfInterp = math.exp(-yInterp*dcfMaturityFromRefDate)
+        
+        dcf = DL.DayCountFraction(startDate,maturity,instConvention.dayCountBasis)
+        mktQuote = self.InsSet.marketQuotes()[instIndex]
+        df_fwd_start = 1.0/(1.0+dcf*mktQuote)
+        df = dfInterp/df_fwd_start
+
+        self.Maturities[index] = maturity
+        self.DayCountFractions[index] = dcfstartDateFromRefDate
+        self.DiscountFactors[index] = df
+        self.ZeroRates[index] = -math.log(df)/dcfstartDateFromRefDate

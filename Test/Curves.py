@@ -24,12 +24,12 @@ import datetime as DT
 
 class InstrumentConvention:
     
-    def __init__(self,ticker,theCalendar,periodFromOriginToSpot,periodFromSpotToStart,periodFromStartToEnd,adjustmentRule,dayCountBasis):
+    def __init__(self,ticker,theCalendar,periodFromOriginToSpot,periodFromSpotToStart,periodFromSpotToEnd,adjustmentRule,dayCountBasis):
         self.Calendar = theCalendar
         self.Ticker = ticker
         self.PeriodFromOriginToSpot = periodFromOriginToSpot
         self.PeriodFromSpotToStart = periodFromSpotToStart
-        self.PeriodFromStartToEnd = periodFromStartToEnd
+        self.PeriodFromSpotToEnd = periodFromSpotToEnd
         self.AdjustmentRule = adjustmentRule
         self.DayCountBasis = dayCountBasis
 
@@ -40,7 +40,7 @@ class InstrumentConvention:
     def periodFromSpotToStart(self):
         return self.PeriodFromSpotToStart
     def periodFromStartToEnd(self):
-        return self.PeriodFromStartToEnd
+        return self.PeriodFromSpotToEnd
     def adjustmentRule(self):
         return self.AdjustmentRule
     def dayCountBasis(self):
@@ -50,7 +50,7 @@ class InstrumentConvention:
         # Return a tuble containing ( spotDate , startDate , endDate , dayCountFraction )
         spotDate = self.Calendar.dateAddPeriod(refDate,self.PeriodFromOriginToSpot,self.AdjustmentRule)
         startDate = self.Calendar.dateAddPeriod(spotDate,self.PeriodFromSpotToStart,self.AdjustmentRule)
-        endDate = self.Calendar.dateAddPeriod(startDate,self.PeriodFromStartToEnd,self.AdjustmentRule)
+        endDate = self.Calendar.dateAddPeriod(spotDate,self.PeriodFromSpotToEnd,self.AdjustmentRule)
         dayCountFraction = DL.DayCountFraction(startDate,endDate,self.DayCountBasis)
         return (spotDate,startDate,endDate,dayCountFraction)
 
@@ -266,7 +266,7 @@ class ForwardCurve(Curve):
             'EUFR0FI' : 8,
             'EUFR0GJ' : 6,
             'EUFR0HK' : 7,
-            'EUFR0I1' : 9}        
+            'EUFR0I1' : 9}
 
     def rangePillars(self):
         return range(33,43)
@@ -354,7 +354,7 @@ class ForwardCurve(Curve):
         df_fwd_start = 1.0/(1.0+dcf*mktQuote)
         df = dfInterp/df_fwd_start
 
-        self.Maturities[index] = maturity
+        self.Maturities[index] = startDate
         self.DayCountFractions[index] = dcfstartDateFromRefDate
         self.DiscountFactors[index] = df
         self.ZeroRates[index] = -math.log(df)/dcfstartDateFromRefDate

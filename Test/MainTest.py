@@ -58,10 +58,8 @@ if __name__=='__main__':
 
     eur3M = CV.ForwardCurve(ins)
     eur3M.bootstrap()
-    for i in range(0,len(eur3M.zeroRates())):
-        print (i,eur3M.dayCountFractions()[i],eur3M.discountFactors()[i],eur3M.zeroRates()[i])
-    plt.plot(eur3M.dayCountFractions(),eur3M.discountFactors(),'o')
-    #plt.plot(eur3M.dayCountFractions(),eur3M.zeroRates(),'o')
+    #plt.plot(eur3M.dayCountFractions(),eur3M.discountFactors(),'-o')
+    #plt.plot(eur3M.dayCountFractions(),eur3M.zeroRates(),'-o')
     
     # Database test    
     

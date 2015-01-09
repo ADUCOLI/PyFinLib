@@ -98,7 +98,7 @@ class DataBaseHdf5():
         
     def createDataBaseHdf5(self):
         
-        print 'Created : ' + self.fileName
+        print ('Created : ' + self.fileName)
                 
         f = h5py.File(self.fileName)
         
@@ -109,7 +109,7 @@ class DataBaseHdf5():
     def openDB(self):
         
         if self.open is True:
-            print 'DB already open!'
+            print ('DB already open!')
             return
         self.store = pd.HDFStore(self.fileName)
         self.open = True
@@ -118,7 +118,7 @@ class DataBaseHdf5():
     def closeDB(self):
         
         if self.open is False:
-            print 'DB already closed!'
+            print ('DB already closed!')
             return
         self.store.close()
         self.open = False
@@ -132,7 +132,7 @@ class DataBaseHdf5():
 
         else:
 
-            print 'Invalid type in input' + str(type(dictData))
+            print ('Invalid type in input' + str(type(dictData)))
             return            
             
         self.openDB()
@@ -147,7 +147,7 @@ class DataBaseHdf5():
 
         except:
             
-            print 'New table Curve initialized!'
+            print ('New table Curve initialized!')
             self.store['Curve'] = panelData
         
         self.store.flush()
@@ -161,7 +161,7 @@ class DataBaseHdf5():
 
         else:
 
-            print 'Invalid type in input' + str(type(dictData))
+            print ('Invalid type in input' + str(type(dictData)))
             return            
             
         self.openDB()
@@ -176,7 +176,7 @@ class DataBaseHdf5():
 
         except:
             
-            print 'New table Curve initialized!'
+            print ('New table Curve initialized!')
             self.store['Futures'] = panelData
         
         self.store.flush()
@@ -217,7 +217,7 @@ class DataBaseHdf5():
 
         except:
             
-            print 'Empty data, table or date not found!'
+            print ('Empty data, table or date not found!')
             
         self.store.flush()
         

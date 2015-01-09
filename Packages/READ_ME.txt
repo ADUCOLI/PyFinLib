@@ -1,5 +1,10 @@
 To install the packages, follow these steps.
 
+PYTHON 3 : ANACONDA
+-------------------
+http://repo.continuum.io/archive/.winzip/
+
+
 WINDOWS MACHINE
 ---------------
 	-> unzip the folder

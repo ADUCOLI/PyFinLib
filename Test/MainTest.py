@@ -50,7 +50,7 @@ def readSingleStirData(name,startRow):
 
 if __name__=='__main__':
     
-    ins = CV.BootstrapIntrumentSet('/Eonia_20130927_MktData.xls')
+    ins = CV.BootstrapIntrumentSet('/20150107_MktData.xls')
     eonia = CV.DiscountCurve(ins)
     eonia.bootstrap()
     #plt.plot(eonia.dayCountFractions(),eonia.discountFactors())

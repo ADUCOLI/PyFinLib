@@ -220,31 +220,49 @@ class DiscountCurve(Curve):
         return range(0,33)
 
     def bootstrap(self):
-        cumSum = 0.
         ref_date = self.refDate()
-        settlement_date = ref_date
+        self.Maturities.append(ref_date)
+        self.DayCountFractions.append(0.0)            
+        self.DiscountFactors.append(1.0)
+        self.ZeroRates.append(0.0)
         for i in self.rangePillars():
             instConvention = self.instrumentsConventions()[i]
             (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
             dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
-
-            self.Maturities.append(maturity)
-            self.DayCountFractions.append(dcfFromRefDate)
             
-            dcf_i = DL.DayCountFraction(settlement_date,maturity,instConvention.dayCountBasis)
             mktQuote_i = self.InsSet.marketQuotes()[i]
             if dcfFromRefDate <=1.0:
                 df = 1./(1+dcfFromRefDate*mktQuote_i)
             else:
-                df = (1.-mktQuote_i*cumSum)/(1+dcf_i*mktQuote_i)
+                interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+                bpv = self.__discountFactorFromOneYearOn(ref_date,spotDate,maturity,instConvention,interpolator)
+                df = (1.-dayCountFraction*bpv)/(1+dayCountFraction*mktQuote_i)
         
+            print (i,instConvention.ticker(),maturity,df)
             zeroRate = -math.log(df)/dcfFromRefDate
-            cumSum = cumSum + dcf_i* df
-            settlement_date = maturity
-            
+
+            self.Maturities.append(maturity)
+            self.DayCountFractions.append(dcfFromRefDate)            
             self.DiscountFactors.append(df)
             self.ZeroRates.append(zeroRate)
         self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+        
+    def __discountFactorFromOneYearOn(self,refDate,spotDate,maturity,instConvention,interpolator):
+        calendar = instConvention.Calendar
+        dayCountBasis = instConvention.DayCountBasis
+        settlementDate = maturity
+        while(settlementDate >= spotDate):
+            settlementDate = calendar.dateAddPeriod(settlementDate,"-1Y","MP")
+        settlementDate = calendar.dateAddPeriod(settlementDate,"1Y","MF")
+        startDate = spotDate
+        bpv = 0.
+        while(settlementDate <= maturity):
+            dcf = DL.DayCountFraction(startDate,settlementDate,dayCountBasis)
+            dcfFromRefDate = DL.DayCountFraction(refDate,settlementDate,dayCountBasis)            
+            df = interpolator([dcfFromRefDate])
+            bpv = bpv + dcf*df
+            settlementDate = calendar.dateAddPeriod(settlementDate,"1Y","MF")
+        return bpv
         
 class ForwardCurve(Curve):
 

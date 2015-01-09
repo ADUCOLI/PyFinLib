@@ -49,7 +49,7 @@ def BrentRootSolver(f,args,brack,TOLL=0.0000001,MAX_ITER = 100):
             D = (T - 1) * (R - 1) * (U - 1)
             N = U * R * (T - 1) * x1 - T * (R - 1) * x2 + (U - 1) * a
             
-            if (D <> 0):
+            if (D != 0):
               s = N / D
               dX = s - x1
         #SECANT

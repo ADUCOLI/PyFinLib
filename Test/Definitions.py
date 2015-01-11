@@ -32,5 +32,5 @@ def IntrinsicValue(forward,strike,optType):
         OptionType.STRADDLE: NP.max(forward-strike),
         OptionType.FORWARD: forward-strike
     }
-    return price.get(optType,NP.max(forward-strike,0.))        
+    return price[optType,NP.max(forward-strike,0.)]
     

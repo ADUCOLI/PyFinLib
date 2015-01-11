@@ -17,6 +17,7 @@ import ExcelLib as EL
 import DateLib as DL
 import Calendar as CL
 import datetime as DT
+import NumericalRecipies as NP
 
 ###############################################################
 ########  MAP BBG TICKER TO INSTRUMENT CONVENTIONS  ###########
@@ -45,6 +46,8 @@ class InstrumentConvention:
         return self.AdjustmentRule
     def dayCountBasis(self):
         return self.DayCountBasis
+    def calendar(self):
+        return self.Calendar
         
     def computeDatesDayCountFraction(self,refDate):
         # Return a tuble containing ( spotDate , startDate , endDate , dayCountFraction )
@@ -134,7 +137,8 @@ class BootstrapIntrumentSet:
         
         self.Data['InstrumentsConventions'] = []
         for idx in range(0, len(self.Data['Tickers'])):
-            instConvention = MapTickerToInstrumentConventions.get(self.Data['Tickers'][idx])
+            #instConvention = MapTickerToInstrumentConventions.get(self.Data['Tickers'][idx])
+            instConvention = MapTickerToInstrumentConventions[self.Data['Tickers'][idx]]
             if(instConvention is None):
                 raise ValueError('Null instrument convention from input data')
             self.Data['InstrumentsConventions'].append(instConvention)
@@ -228,15 +232,15 @@ class DiscountCurve(Curve):
         for i in self.rangePillars():
             instConvention = self.instrumentsConventions()[i]
             (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
-            dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
+            dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis())
             
             mktQuote_i = self.InsSet.marketQuotes()[i]
             if dcfFromRefDate <=1.0:
                 df = 1./(1+dcfFromRefDate*mktQuote_i)
             else:
-                interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+                interpolator = NP.PiecewiseLinearInterpol1D(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
                 bpv = self.__discountFactorFromOneYearOn(ref_date,spotDate,maturity,instConvention,interpolator)
-                df = (1.-dayCountFraction*bpv)/(1+dayCountFraction*mktQuote_i)
+                df = (1.-mktQuote_i*bpv)/(1+dayCountFraction*mktQuote_i)
         
             print (i,instConvention.ticker(),maturity,df)
             zeroRate = -math.log(df)/dcfFromRefDate
@@ -245,21 +249,23 @@ class DiscountCurve(Curve):
             self.DayCountFractions.append(dcfFromRefDate)            
             self.DiscountFactors.append(df)
             self.ZeroRates.append(zeroRate)
-        self.Interpolator = interpolate.Akima1DInterpolator(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
+        self.Interpolator = NP.PiecewiseLinearInterpol1D(numpy.array(self.DayCountFractions),numpy.array(self.ZeroRates))
         
     def __discountFactorFromOneYearOn(self,refDate,spotDate,maturity,instConvention,interpolator):
-        calendar = instConvention.Calendar
-        dayCountBasis = instConvention.DayCountBasis
+        if(type(interpolator) is not NP.PiecewiseLinearInterpol1D):
+            raise ValueError('Invalid interpolator')
+        calendar = instConvention.calendar()
+        dayCountBasis = instConvention.dayCountBasis()
         settlementDate = maturity
         while(settlementDate >= spotDate):
             settlementDate = calendar.dateAddPeriod(settlementDate,"-1Y","MP")
         settlementDate = calendar.dateAddPeriod(settlementDate,"1Y","MF")
         startDate = spotDate
         bpv = 0.
-        while(settlementDate <= maturity):
+        while(settlementDate < maturity):
             dcf = DL.DayCountFraction(startDate,settlementDate,dayCountBasis)
             dcfFromRefDate = DL.DayCountFraction(refDate,settlementDate,dayCountBasis)            
-            df = interpolator([dcfFromRefDate])
+            df = interpolator.interpolate1D(dcfFromRefDate)
             bpv = bpv + dcf*df
             settlementDate = calendar.dateAddPeriod(settlementDate,"1Y","MF")
         return bpv
@@ -305,7 +311,7 @@ class ForwardCurve(Curve):
         # Deposit Bootstrap
         for i in self.rangeDepo():
             instConvention = self.instrumentsConventions()[i]
-            index = self.MapTickerToIndex.get(instConvention.ticker())
+            index = self.MapTickerToIndex[instConvention.ticker()]
             (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
             dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)            
             dcf = DL.DayCountFraction(startDate,maturity,instConvention.dayCountBasis)
@@ -321,7 +327,7 @@ class ForwardCurve(Curve):
         # FRA expiry 6M,9M,12M Bootstrap
         for i in self.rangePrincipalFras() :
             instConvention = self.instrumentsConventions()[i]
-            index = self.MapTickerToIndex.get(instConvention.ticker())
+            index = self.MapTickerToIndex[instConvention.ticker()]
             (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
             dcfFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
             dcf = DL.DayCountFraction(startDate,maturity,instConvention.dayCountBasis)
@@ -350,10 +356,10 @@ class ForwardCurve(Curve):
         # FRA expiry 1M,2M,4M,5M,7M,8M,10M,11M Bootstrap
         ref_date = self.refDate()
         instConvention = self.instrumentsConventions()[instIndex]
-        indexPrePillar = self.MapTickerToIndex.get(tickerPrePillar)
-        indexPostPillar = self.MapTickerToIndex.get(tickerPostPillar)
+        indexPrePillar = self.MapTickerToIndex[tickerPrePillar]
+        indexPostPillar = self.MapTickerToIndex[tickerPostPillar]
         
-        index = self.MapTickerToIndex.get(instConvention.ticker())
+        index = self.MapTickerToIndex[instConvention.ticker()]
         (spotDate,startDate,maturity,dayCountFraction) = instConvention.computeDatesDayCountFraction(ref_date)
         dcfMaturityFromRefDate = DL.DayCountFraction(ref_date,maturity,instConvention.dayCountBasis)
         dcfstartDateFromRefDate = DL.DayCountFraction(ref_date,startDate,instConvention.dayCountBasis)

@@ -66,21 +66,23 @@ def xl_Get_Data_ToUpperCaseString(xl_Name, num_Sheet, row_start, col_start, row_
     
     if(row_start==row_end)&(col_start==col_end):
         cell_obj = xl_sheet.cell(row_end, col_end)
-        data.append(cell_obj.value.upper().encode('ascii','ignore'))
+        # put 'u in front of the string
+        # data.append(cell_obj.value.upper().encode('ascii','ignore'))
+        data.append(cell_obj.value.upper())
         return data
     
     # Case row vector:
     if(row_start==row_end):
         for col_idx in range(col_start, col_end):
             cell_obj = xl_sheet.cell(row_start, col_idx)
-            data.append(cell_obj.value.upper().encode('ascii','ignore'))
+            data.append(cell_obj.value.upper())
         return data
     
     # Case cols vector:
     if(col_start==col_end):
         for row_idx in range(row_start, row_end):
             cell_obj = xl_sheet.cell(row_idx, col_start)
-            data.append(cell_obj.value.upper().encode('ascii','ignore'))
+            data.append(cell_obj.value.upper())
         return data
 
     data_matrix = []        
@@ -89,7 +91,7 @@ def xl_Get_Data_ToUpperCaseString(xl_Name, num_Sheet, row_start, col_start, row_
         data = []
         for col_idx in range(col_start, col_end):
             cell_obj = xl_sheet.cell(row_idx, col_idx)
-            data.append(cell_obj.value.upper().encode('ascii','ignore')) 
+            data.append(cell_obj.value.upper())
         data_matrix.append(data)
             
     return data_matrix

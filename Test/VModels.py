@@ -54,7 +54,7 @@ class I_VModel:
             DEF.OptionType.PUT: NP.max(NP.min(U, 1.0), 0.0),
             DEF.OptionType.STRADDLE: NP.max(NP.min(1.0 - 2.0 * U, 1.0), -1.0)
         }
-        return price.get(optType,NP.max(NP.min(1.0 - U, 1.0), 0.0))
+        return price[optType]
 
 
     def equivalentLognormalVol(self,strike):
@@ -96,4 +96,4 @@ class BlackModel(I_VModel):
             DEF.ModelType.NORMAL: VMU.NormalBlackFormula(self.Forward,self.ExerciseTime,self.Volatility,strike,optType),
             DEF.ModelType.LOGNORMAL: VMU.LogNormalBlackFormula(self.Forward,self.ExerciseTime,self.Volatility,strike,optType)
         }
-        return price.get(self.ModelType,VMU.LogNormalBlackFormula(self.Forward,self.ExerciseTime,self.Volatility,strike,optType))
+        return price[self.ModelType]

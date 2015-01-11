@@ -13,7 +13,7 @@ def DayCountFraction(startDate,endDate,basis):
      'ACT/365': (endDate-startDate).days/365.,
      'ACT/360': (endDate-startDate).days/360.
     }
-    return dcf.get(basis,(endDate-startDate).days/365.)
+    return dcf[basis]
 
 	
 ##############################################################################

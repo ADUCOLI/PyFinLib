@@ -5,6 +5,7 @@ Created on Sat Nov 15 17:18:23 2014
 @author: Emanuele Mercuri
 """
 from abc import ABCMeta, abstractmethod
+import math
 import datetime as DT
 import workdays as WD
 import calendar as CL
@@ -36,7 +37,7 @@ class Calendar:
 
     def dateAddNumberOfMonths(self,startDate,numberOfMonths,adjustmentRule):
         month = startDate.month - 1 + numberOfMonths
-        year = startDate.year + month / 12
+        year = startDate.year + math.floor(month / 12)
         month = month % 12 + 1
         day = min(startDate.day,CL.monthrange(year,month)[1])
         endDate = DT.datetime(year,month,day)
@@ -50,7 +51,7 @@ class Calendar:
          'MF': self.__dateAdjustModifiedFollowing(startDate),
          'MP': self.__dateAdjustModifiedPreceding(startDate)
         }
-        return endDate.get(adjustmentRule, self.__dateAdjustNone(startDate))
+        return endDate[adjustmentRule]
 
     def __dateAdjustNone(self,startDate):
         return startDate
@@ -91,7 +92,7 @@ class Calendar:
          'M': self.dateAddNumberOfMonths(startDate,parserResult['unit'],adjustmentRule),
          'Y': self.dateAddNumberOfMonths(startDate,parserResult['unit']*12,adjustmentRule),
         }
-        return endDate.get(parserResult['period'], self.dateAddNumberOfDays(startDate,1,adjustmentRule))
+        return endDate[parserResult['period']]
 
 class EURCalendar(Calendar):
     

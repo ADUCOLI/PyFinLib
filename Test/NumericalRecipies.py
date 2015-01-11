@@ -143,6 +143,34 @@ def CatmullRomSpline(fun,x,nodes):
         interpolation[i] = alphaK_1*fK_1 + alphaK*fK + alphaK1*fK1 + alphaK2*fK2
     return interpolation
 
+
+###############################################################
+########  PIECEWISE LINEAR INTERPOLATION  #####################
+###############################################################
+class PiecewiseLinearInterpol1D:
+    
+    def __init__(self,x,y):
+        self.x = x
+        self.y = y
+        self.n = max(y.shape)
+        if(self.n!=max(x.shape)):
+            raise ValueError('Different input dimensions')
+    
+    def interpolate1D(self,z):
+        idx = self.n + 1
+        if(z>self.x[0]):
+            for i in range(1, self.n):
+                if(z<=self.x[i]):
+                    idx = i
+                    break
+        if(idx>self.n):
+            raise ValueError('Unable to bracket the point')
+        if(self.x[idx]==self.x[idx-1]):
+            raise ValueError('Invalid Interval')        
+        weight = (self.x[idx]-z)/(self.x[idx]-self.x[idx-1])
+        return ( weight*self.y[idx-1] + (1-weight)*self.y[idx] )
+    
+    
 ###############################################################
 ########  NEWTON LAGRANGE POLYNOMIAL INTERPOLATION  ###########
     ### http://en.wikipedia.org/wiki/Newton_polynomial ###
@@ -167,6 +195,7 @@ def NewtonLinearInterpol(x,y,z):
             f[j,:] = f[j,:]*(z-x[j,n-1-i]) + a[n-1-i,n-1-i]
             
     return f
+
     
 ###############################################################
 ########  HERMITE LAGRANGE POLYNOMIAL INTERPOLATION  ###########
@@ -200,8 +229,3 @@ def HermiteLinearInterpol(x,y,dy,z):
             hxv = hxv+(y[:,i]*p+dy[:,i]*q)
         herm.append(hxv)
     return NP.array(herm).transpose()
-
-
-
-
-    

@@ -24,7 +24,7 @@ def LogNormalBlackFormula(fwd,T,vol,K,optType):
         DEF.OptionType.PUT: K*norm.cdf(-d2)-fwd*norm.cdf(-d1),
         DEF.OptionType.STRADDLE: fwd*(2.*norm.cdf(d1)-1.0)-K*(2.*norm.cdf(d2)-1.0)
     }
-    return price.get(optType,fwd*norm.cdf(d1)-K*norm.cdf(d2))    
+    return price[optType]
 
     
 def NormalBlackFormula(fwd,T,vol,K,optType):
@@ -39,7 +39,7 @@ def NormalBlackFormula(fwd,T,vol,K,optType):
         DEF.OptionType.PUT: vol_t*norm.pdf(d)-(fwd-K)*norm.cdf(-d),
         DEF.OptionType.STRADDLE: (fwd-K)*(2.*norm.cdf(d)-1)+2.*vol_t*norm.pdf(d)
     }
-    return price.get(optType,(fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d))
+    return price[optType,(fwd-K)*norm.cdf(d)+vol_t*norm.pdf(d)]
 
 def BlackImpliedVol(price,fwd,K,T,optType,modelType):
     args = (price,fwd,T,K,optType,modelType)
@@ -49,7 +49,7 @@ def BlackImpliedVol(price,fwd,K,T,optType,modelType):
             DEF.ModelType.NORMAL: NormalBlackFormula(fwd,T,x,K,optType) - price,
             DEF.ModelType.LOGNORMAL: LogNormalBlackFormula(fwd,T,x,K,optType) - price
         }
-        return fval.get(modelType,LogNormalBlackFormula(fwd,T,x,K,optType) - price)
+        return fval[modelType]
     toll = 1e-10
     brack = (toll,10.)
     #return scipy.optimize.brent(f,args,brack,toll) lib minimizer (use absolute value fun)
